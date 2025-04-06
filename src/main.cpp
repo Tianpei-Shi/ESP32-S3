@@ -1,0 +1,27 @@
+#include <Arduino.h>
+
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
+
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// put function declarations here:
+int myFunction(int, int);
+
+void setup() {
+  // put your setup code here, to run once:
+  int result = myFunction(2, 3);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+}
+
+// put function definitions here:
+int myFunction(int x, int y) {
+  return x + y;
+}
