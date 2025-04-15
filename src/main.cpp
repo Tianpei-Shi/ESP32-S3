@@ -1,145 +1,103 @@
 #include <Arduino.h>
-// DHT11温湿度传感器
-#include <Adafruit_Sensor.h>
-#include <DHT.h>
-#include <DHT_U.h>
-// 0.96寸显示屏
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-// WiFi
-#include <WiFi.h>
-// RGB灯
-#include <Adafruit_NeoPixel.h>
+#include "oled_display.h"
+#include "sensors.h"
+#include "audio.h"
+#include "ai_interface.h"
 
-// 引脚定义
-#define DHTPIN 7      // DHT11连接到GPIO7
-#define DHTTYPE DHT11 // DHT类型为DHT11
-#define I2C_SDA 15    // OLED SDA连接到GPIO15
-#define I2C_SCL 16    // OLED SCL连接到GPIO16
-#define RGB_PIN 48    // RGB LED连接到GPIO48
-#define NUM_LEDS 1    // LED数量为1个
-
-// OLED显示屏设置
-#define SCREEN_WIDTH 128    // OLED显示屏宽度，单位：像素
-#define SCREEN_HEIGHT 64    // 0.96寸OLED的高度是64像素
-#define OLED_RESET -1       // Reset pin
-#define SCREEN_ADDRESS 0x3C // I2C地址，通常是0x3C
-
-// 创建对象
-DHT dht(DHTPIN, DHTTYPE);
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-// 创建NeoPixel对象
-Adafruit_NeoPixel pixels(NUM_LEDS, RGB_PIN, NEO_GRB + NEO_KHZ800);
-
-// 定义全局变量用于存储上次读取的值
-float lastTemp = 0;
-float lastHumi = 0;
-
-// 绘制居中的文本
-void drawCenteredText(const char *text, int16_t y)
-{
-  int16_t x1, y1;
-  uint16_t w, h;
-  display.getTextBounds(text, 0, 0, &x1, &y1, &w, &h);
-  display.setCursor((SCREEN_WIDTH - w) / 2, y);
-  display.print(text);
-}
+// 运行状态变量
+bool recordingVoice = false;
+unsigned long lastSensorUpdateTime = 0;
+unsigned long lastVoiceCheckTime = 0;
+const unsigned long SENSOR_UPDATE_INTERVAL = 2000; // 传感器更新间隔：2秒
+const unsigned long VOICE_CHECK_INTERVAL = 5000;   // 语音检测间隔：5秒
 
 void setup()
 {
-  Serial.begin(115200); // 初始化串口通信
+  // 初始化串口
+  Serial.begin(115200);
+  Serial.println("System starting...");
 
-  // 初始化RGB LED
-  pixels.begin();
-  pixels.clear();                                 // 设置所有像素为'关闭'状态
-  pixels.setPixelColor(0, pixels.Color(0, 0, 0)); // 设置第一个LED为黑色（关闭）
-  pixels.show();                                  // 更新LED状态
-  Serial.println("RGB LED已关闭");
-
-  // 配置I2C引脚
-  Wire.begin(I2C_SDA, I2C_SCL);
-
-  // 初始化DHT11
-  dht.begin();
-  Serial.println("DHT11初始化完成");
-
-  // 初始化OLED
-  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
+  // 初始化传感器
+  if (!initSensors())
   {
-    Serial.println(F("SSD1306初始化失败"));
-    for (;;)
-      ; // 如果初始化失败则不再继续
+    Serial.println("Sensor initialization failed!");
   }
-  Serial.println("OLED初始化完成");
 
-  // 显示启动信息
-  display.clearDisplay();
-  display.setTextSize(2);
-  display.setTextColor(SSD1306_WHITE);
-  drawCenteredText("System", 10);
-  drawCenteredText("Starting", 30);
-  display.display();
-  delay(2000);
+  // 初始化OLED显示屏
+  if (!initOLEDDisplays())
+  {
+    Serial.println("OLED display initialization failed!");
+  }
+
+  // 初始化麦克风
+  if (!initMicrophone())
+  {
+    Serial.println("Microphone initialization failed!");
+  }
+
+  // 初始化AI接口
+  if (!initAIInterface())
+  {
+    Serial.println("AI interface initialization failed!");
+  }
+
+  // 显示启动画面
+  showStartupScreen();
+
+  Serial.println("System initialization complete!");
 }
 
 void loop()
 {
+  // 当前时间
+  unsigned long currentMillis = millis();
 
-  // 读取温湿度数据
-  float humidity = dht.readHumidity();
-  float temperature = dht.readTemperature();
-
-  // 检查是否读取失败
-  if (isnan(humidity) || isnan(temperature))
+  // 1. 定期更新传感器数据和显示
+  if (currentMillis - lastSensorUpdateTime >= SENSOR_UPDATE_INTERVAL)
   {
-    Serial.println(F("DHT11读取失败!"));
-    // 如果读取失败，使用上次的有效值
-    humidity = lastHumi;
-    temperature = lastTemp;
-  }
-  else
-  {
-    // 更新最后的有效值
-    lastTemp = temperature;
-    lastHumi = humidity;
+    lastSensorUpdateTime = currentMillis;
 
-    // 在串口打印数据
-    Serial.print(F("温度: "));
-    Serial.print(temperature);
-    Serial.print(F("°C, 湿度: "));
-    Serial.print(humidity);
-    Serial.println(F("%"));
+    // 读取传感器数据
+    float temperature, humidity;
+    readDHTData(temperature, humidity);
+
+    int pm25Value = readPM25();
+
+    bool waterLevelWarning;
+    int waterLevel = readWaterLevel(waterLevelWarning);
+
+    // 更新OLED显示
+    updateDisplay096(temperature, humidity, pm25Value, waterLevel, waterLevelWarning);
   }
 
-  // 清除显示缓冲
-  display.clearDisplay();
+  // 2. 检查是否需要进行语音识别
+  if (currentMillis - lastVoiceCheckTime >= VOICE_CHECK_INTERVAL && !recordingVoice)
+  {
+    lastVoiceCheckTime = currentMillis;
+    recordingVoice = true;
 
-  // 显示标题
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  drawCenteredText("Temperature & Humidity", 0);
+    // 语音识别
+    String voiceInput = captureAndRecognizeSpeech();
+    Serial.print("Recognized voice: ");
+    Serial.println(voiceInput);
 
-  // 显示分隔线
-  display.drawLine(0, 10, SCREEN_WIDTH, 10, SSD1306_WHITE);
+    // 如果识别到语音，处理AI回复
+    if (voiceInput.length() > 0)
+    {
+      String aiResponse;
+      processUserInput(voiceInput, aiResponse);
 
-  // 显示温度（大字体）
-  display.setTextSize(2);
-  char tempStr[16];
-  sprintf(tempStr, "%.1fC", temperature);
-  drawCenteredText(tempStr, 16);
+      // 更新AI显示
+      updateDisplay091(voiceInput, aiResponse);
+    }
 
-  // 显示湿度（大字体）
-  char humiStr[16];
-  sprintf(humiStr, "%.1f%%", humidity);
-  drawCenteredText(humiStr, 40);
+    recordingVoice = false;
+  }
 
-  // 更新显示
-  display.display();
+  // 3. 更新AI动画状态 - 这个可以每次循环都更新，不需要等待
+  AIState aiState = getAIState();
+  updateDisplay091(aiState.userInput, aiState.aiResponse);
 
-  // 延时2秒
-  delay(2000);
+  // 简单的延时，避免过快循环
+  delay(100);
 }
-
-// put function definitions here:
