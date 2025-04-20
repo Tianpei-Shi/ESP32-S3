@@ -1,148 +1,89 @@
-# 基于 arduino 开发的智能语音控制加湿小车
+# ESP32-S3物联网平台
 
-## 硬件配置
+这是一个基于ESP32-S3的物联网平台项目，集成了多种传感器监控、AI语音助手和华为云IoT平台连接功能。
 
-**开发板型号**: ESP32 S3 N16R8
+## 功能特性
 
-## 使用的模块
+- **环境监测**：温度、湿度、PM2.5、水位监测
+- **OLED显示**：0.96寸OLED实时显示传感器数据
+- **语音识别**：内置麦克风，支持语音指令识别
+- **AI交互**：AI语音助手，显示在0.91寸OLED屏幕上
+- **华为云IoT连接**：数据上云，远程监控和控制
 
-- Max98357 音频 + 扬声器
-- 立式微动开关
-- INMP441 麦克风
-- 小车模块
-- 加湿器模块
-- YW01 液位传感器
-- PM2.5 传感器 gp2y1014au0f
-- DHT11 温湿度检测
-- 温湿度显示屏（0.96 寸 OLED）
-- AI 对话显示屏（0.91 寸 OLED）
-- 状态显示屏（0.96 寸 OLED）
-- RGB LED
+## 硬件要求
 
-## 针脚分配情况
+- ESP32-S3开发板
+- DHT22温湿度传感器
+- PM2.5传感器
+- 水位传感器
+- 0.96寸OLED显示屏
+- 0.91寸OLED显示屏
+- 麦克风模块
 
-### Max98357 音频模块 + 扬声器（I2S 接口）
+## 软件依赖
 
-| 引脚    | 连接到          | 说明         |
-| ------- | --------------- | ------------ |
-| VDD     | 3.3V            | 电源正极     |
-| GND     | GND             | 电源负极     |
-| BCLK    | GPIO36 (SPII07) | 位时钟       |
-| LRCLK   | GPIO35 (SPII06) | 左右声道时钟 |
-| DIN     | GPIO37 (SPIDOS) | 数据输入     |
-| GAIN    | 悬空            | 12dB 增益    |
-| SD/MODE | 3.3V            | 正常工作模式 |
+- Arduino framework
+- 依赖库：
+  - Adafruit SSD1306
+  - DHT sensor library
+  - WiFi
+  - Adafruit NeoPixel
+  - ESP32-audioI2S
+  - Sharp GP2Y Dust Sensor
+  - Adafruit GFX Library
+  - Adafruit BusIO
+  - PubSubClient
+  - ArduinoJson
 
-### INMP441 麦克风 (I2S 接口)
+## 快速开始
 
-| 引脚 | 连接到            | 说明     |
-| ---- | ----------------- | -------- |
-| VDD  | 3.3V              | 电源正极 |
-| GND  | GND               | 电源负极 |
-| SCK  | GPIO47 (SPICLK_P) | 时钟     |
-| WS   | GPIO14 (GPIO14)   | 字选择   |
-| SD   | GPIO38 (FSPIWP)   | 数据     |
-| L/R  | GND               | 左声道   |
+1. 使用PlatformIO或Arduino IDE打开项目
+2. 修改WiFi配置和华为云IoT平台连接信息
+3. 连接相关硬件
+4. 编译并上传到ESP32-S3
 
-### 温湿度显示屏 - 0.96 寸 OLED (I2C 接口, 地址: 0x3C)
+## 目录结构
 
-| 引脚 | 连接到          | 说明       |
-| ---- | --------------- | ---------- |
-| VDD  | 3.3V            | 电源正极   |
-| GND  | GND             | 电源负极   |
-| SDA  | GPIO15 (GPIO15) | I2C 数据线 |
-| SCL  | GPIO16 (GPIO16) | I2C 时钟线 |
+- **src/**：源代码文件夹
+  - main.cpp：主程序入口
+  - huawei_iot.cpp：华为云IoT平台连接模块
+  - sensors.cpp：传感器管理模块
+  - wifi_manager.cpp：WiFi连接管理
+  - oled_display.cpp：OLED显示控制
+  - audio.cpp：音频处理
+  - ai_interface.cpp：AI服务接口
+- **include/**：头文件文件夹
+- **platformio.ini**：PlatformIO项目配置文件
 
-### AI 对话显示屏 - 0.91 寸 OLED (I2C 接口, 地址: 0x3C)
+## 华为云IoT平台配置
 
-| 引脚 | 连接到          | 说明       |
-| ---- | --------------- | ---------- |
-| VDD  | 3.3V            | 电源正极   |
-| GND  | GND             | 电源负极   |
-| SDA  | GPIO9 (GPIO9)   | I2C 数据线 |
-| SCL  | GPIO10 (GPIO10) | I2C 时钟线 |
+本项目使用华为云IoT平台作为数据管理和设备控制中心。需要在华为云IoT平台创建产品和设备，并配置相应的物模型。
 
-### 小车模块
+### 物模型配置
+  
+物模型服务：`environment`
+属性：
+- temperature：温度，浮点数
+- humidity：湿度，整数
+- PM2.5：PM2.5值，整数
+- water：水位，整数（百分比）
 
-| 引脚        | 连接到        | 说明                     |
-| ----------- | ------------- | ------------------------ |
-| 电机 A 正转 | GPIO1 (GPIO1) | 控制电机 A 正向旋转      |
-| 电机 A 反转 | GPIO2 (GPIO2) | 控制电机 A 反向旋转      |
-| 电机 B 正转 | GPIO3 (GPIO3) | 控制电机 B 正向旋转      |
-| 电机 B 反转 | GPIO8 (GPIO8) | 控制电机 B 反向旋转      |
-| VCC         | 5V/3.3V       | 电源正极（根据模块要求） |
-| GND         | GND           | 电源负极                 |
+> 注意：GitHub上的代码已将敏感信息替换为占位符。实际使用时需替换为您自己的连接信息。
 
-### 加湿器模块
+## 注意事项
 
-| 引脚     | 连接到        | 说明           |
-| -------- | ------------- | -------------- |
-| 控制引脚 | GPIO5 (GPIO5) | 控制加湿器开关 |
-| VCC      | 5V            | 电源正极       |
-| GND      | GND           | 电源负极       |
+- 华为云IoT连接信息（设备ID、密钥等）需要根据您的设备进行替换
+- WiFi信息需要替换为您自己的网络信息
+- 首次连接华为云IoT平台时，设备需要激活过程
 
-### YW01 液位传感器
+## 许可证
 
-| 引脚 | 连接到          | 说明     |
-| ---- | --------------- | -------- |
-| AO   | GPIO6 (GPIO6)   | 模拟输出 |
-| DO   | GPIO11 (GPIO11) | 数字输出 |
-| VCC  | 3.3V            | 电源正极 |
-| GND  | GND             | 电源负极 |
+MIT
 
-### PM2.5 传感器 (GP2Y1014AU0F)
+## 贡献
 
-| 引脚 | 连接到         | 说明                     |
-| ---- | -------------- | ------------------------ |
-| PUL  | GPIO18 (U1TXD) | 脉冲输出                 |
-| AO   | GPIO17 (U1RXD) | 模拟输出                 |
-| VCC  | 5V/3.3V        | 电源正极（根据模块要求） |
-| GND  | GND            | 电源负极                 |
+欢迎提交Issue和Pull Request！
 
-### DHT11 温湿度传感器
+## 开发者
 
-| 引脚     | 连接到        | 说明       |
-| -------- | ------------- | ---------- |
-| 数据引脚 | GPIO7 (GPIO7) | 温湿度数据 |
-| VCC      | 3.3V          | 电源正极   |
-| GND      | GND           | 电源负极   |
-
-## 需要安装的库
-
-### OLED 显示屏
-
-- Adafruit SSD1306 (版本 2.5.13 或更高)
-- Adafruit GFX Library (会作为依赖自动安装)
-- Adafruit BusIO (会作为依赖自动安装)
-
-### DHT11 温湿度传感器
-
-- DHT sensor library (版本 1.4.6 或更高)
-- Adafruit Unified Sensor (会作为依赖自动安装)
-
-### 音频处理 (Max98357 和 INMP441)
-
-- ESP32-audioI2S (https://github.com/schreibfaul1/ESP32-audioI2S)
-- ESP32-A2DP (可选，用于蓝牙音频)
-
-### WiFi 连接
-
-- WiFi (ESP32 内置，版本 2.0.0 或更高)
-
-### 小车控制
-
-- ESP32 Arduino ESP32Servo (舵机控制)
-- ESP32MotorControl (用于直流电机控制)
-
-### PM2.5 传感器
-
-- Sharp GP2Y Dust Sensor 库（适用于 GP2Y1014AU0F 传感器）
-- 或使用 Arduino 标准库的 analogRead 和 pulseIn 函数
-
-## 安装方法
-
-1. 通过 Arduino IDE: 工具 -> 管理库 -> 搜索上述库名
-2. 通过 PlatformIO:
-   - 编辑 platformio.ini 文件
-   - 在 lib_deps 下添加需要的库
-   - 例如: `lib_deps = adafruit/Adafruit SSD1306@^2.5.13`
+Tianpei-Shi
