@@ -2,12 +2,12 @@
 #include <WiFiClientSecure.h>
 
 // 华为云IoT平台配置（根据下载的连接信息文件更新）
-const char *mqtt_server = "xxxxxxxx.st1.iotda-device.cn-east-3.myhuaweicloud.com";
+const char *mqtt_server = "tcp://8e5166a6be.st1.iotda-device.cn-east-3.myhuaweicloud.com";
 const int mqtt_port = 8883;
 // 设备连接信息更新 - 请确保这些信息与华为云平台完全匹配
-const char *mqtt_client_id = "xxxxxxxx_ESP32S3_0_1_xxxxxxxx";                 // 客户端ID
-const char *mqtt_username = "xxxxxxxx_ESP32S3";                               // 用户名
-const char *mqtt_password = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // 密码
+const char *mqtt_client_id = "6805063cfde7ae374599a9ad_ESP32S3_0_1_2025042213";                 // 客户端ID
+const char *mqtt_username = "6805063cfde7ae374599a9ad_ESP32S3";                               // 用户名
+const char *mqtt_password = "f04466cce588220eeaee3c6a3d3c5ab38226d889bd0c94db842dbae58297fa40"; // 密码
 
 // MQTT客户端
 WiFiClientSecure espClient;
