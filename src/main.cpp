@@ -21,8 +21,8 @@ const unsigned long WIFI_STATUS_CHECK_INTERVAL = 10000; // WiFi状态检查间�
 const unsigned long IOT_REPORT_INTERVAL = 30000;        // IoT数据上报间隔：30秒
 
 // WiFi配置信息
-const char *DEFAULT_WIFI_SSID = "xxxxxx";           // 默认WiFi名称
-const char *DEFAULT_WIFI_PASSWORD = "xxxxxxxx";     // 默认WiFi密码
+const char *DEFAULT_WIFI_SSID = "TP";           // 默认WiFi名称
+const char *DEFAULT_WIFI_PASSWORD = "20031017";     // 默认WiFi密码
 
 // IoT连接尝试次数
 int iotConnectionAttempts = 0;
