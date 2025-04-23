@@ -5,9 +5,9 @@
 const char *mqtt_server = "8e5166a6be.st1.iotda-device.cn-east-3.myhuaweicloud.com";
 const int mqtt_port = 8883;
 // 设备连接信息更新 - 请确保这些信息与华为云平台完全匹配
-const char *mqtt_client_id = "6805063cfde7ae374599a9ad_ESP32S3_0_1_2025042214";                 // 客户端ID
+const char *mqtt_client_id = "6805063cfde7ae374599a9ad_ESP32S3_0_1_2025042306";                 // 客户端ID
 const char *mqtt_username = "6805063cfde7ae374599a9ad_ESP32S3";                                 // 用户名
-const char *mqtt_password = "a7ffdaf941cc6e4e0ac0e1346a3989067d043731d91cd2cdf90247b0c36fad40"; // 密码
+const char *mqtt_password = "0b678071b22e8c7012fc40bff5b09d4b06a06b23b3edce80cd1e280e2538bf88"; // 密码
 
 // MQTT客户端
 WiFiClientSecure espClient;
@@ -172,12 +172,20 @@ bool sendPropertyReport(float temperature, float humidity, int pm25, int waterLe
     // 创建JSON文档
     StaticJsonDocument<256> doc;
 
-    // 直接使用平台定义的服务名和属性名（与物模型完全匹配）
-    JsonObject serviceData = doc.createNestedObject("environment");
-    serviceData["temperature"] = temperature; // 浮点数，保留小数
-    serviceData["humidity"] = (int)humidity;  // 转为整数
-    serviceData["PM2.5"] = pm25;              // 整数
-    serviceData["water"] = waterLevel;        // 整数值，百分比
+    // 创建services数组
+    JsonArray servicesArray = doc.createNestedArray("services");
+
+    // 添加服务对象
+    JsonObject serviceObj = servicesArray.createNestedObject();
+    serviceObj["service_id"] = "environment";
+
+    // 创建properties对象
+    JsonObject propertiesObj = serviceObj.createNestedObject("properties");
+    // 处理温度值，保留一位小数
+    propertiesObj["temperature"] = round(temperature * 10.0) / 10.0; // 浮点数，保留一位小数
+    propertiesObj["humidity"] = (int)humidity;                       // 转为整数
+    propertiesObj["pm25"] = pm25;                                    // 整数，注意不使用"PM2.5"而是"pm25"
+    propertiesObj["water"] = waterLevel;                             // 整数值（1-100的百分比）
 
     // 序列化为JSON字符串
     char jsonBuffer[256];
@@ -185,10 +193,11 @@ bool sendPropertyReport(float temperature, float humidity, int pm25, int waterLe
 
     // 创建主题
     char topic[128];
-    sprintf(topic, "$oc/devices/%s/sys/properties/report", mqtt_username);
+    sprintf(topic, "$oc/devices/6805063cfde7ae374599a9ad_ESP32S3/sys/properties/report", mqtt_username);
 
     // 发送MQTT消息
     Serial.println("发送属性报告...");
+    Serial.println(jsonBuffer); // 打印JSON内容用于调试
 
     return mqttClient.publish(topic, jsonBuffer);
 }

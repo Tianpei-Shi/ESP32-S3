@@ -96,10 +96,19 @@ int readWaterLevel(bool &warning)
     // 读取数字值判断是否有低水位警告
     warning = digitalRead(WATER_DO_PIN) == LOW; // 假设低电平表示水位警告
 
+    // 将模拟值转换为1-100的百分比
+    // 假设水位传感器模拟值范围：0(空) - 4095(满) （ESP32的ADC是12位）
+    int waterLevelPercent = map(waterLevelValue, 0, 4095, 1, 100);
+
+    // 确保百分比在1-100范围内
+    waterLevelPercent = constrain(waterLevelPercent, 1, 100);
+
     Serial.print(F("Water level: "));
     Serial.print(waterLevelValue);
-    Serial.print(F(", Warning: "));
+    Serial.print(F(" ("));
+    Serial.print(waterLevelPercent);
+    Serial.print(F("%), Warning: "));
     Serial.println(warning ? F("Yes") : F("No"));
 
-    return waterLevelValue;
+    return waterLevelPercent; // 返回百分比值
 }
