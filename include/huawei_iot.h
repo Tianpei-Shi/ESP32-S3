@@ -9,7 +9,22 @@
 
 // 设备连接信息（main.cpp中需要引用）
 extern const char *mqtt_username;
-extern const char *mqtt_client_id;
+extern char mqtt_client_id[128];
+extern char mqtt_password[65];
+extern const char *device_id;
+extern const char *device_secret;
+
+// 计算HMACSHA256摘要
+// message: 消息内容（设备密钥）
+// key: 密钥（时间戳）
+// output: 输出缓冲区
+void calculateHMACSHA256(const char *message, const char *key, char *output);
+
+// 获取当前时间戳（格式：YYYYMMDD08）小时部分固定为08
+void getCurrentTimestamp(char *timestamp);
+
+// 生成MQTT连接凭证
+void generateMQTTCredentials();
 
 // 初始化华为云IoT设备
 bool initHuaweiIoT();
