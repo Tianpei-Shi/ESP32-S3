@@ -1,0 +1,212 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              05/24/2025 15:50:58 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN ..\obj\main.obj
+COMPILER INVOKED BY: D:\C51\BIN\C51.EXE ..\code\main.c OMF2 OPTIMIZE(8,SPEED) BROWSE INCDIR(..\code;..\user) DEBUG PRINT
+                    -(.\main.lst) TABS(2) OBJECT(..\obj\main.obj)
+
+line level    source
+
+   1          #include "config.h"
+   2          
+   3          uint8 idata nAsrStatus=0;
+   4          void MCU_init();
+   5          void ProcessInt0(); //ʶ��������
+   6          void delay(unsigned long uldata);
+   7          void User_handle(uint8 dat);//�û�ִ�в�������
+   8          void Delay200ms();
+   9          void Led_test(void);//��Ƭ������ָʾ
+  10          uint8_t G0_flag=DISABLE;//���б�־��ENABLE:���С�DISABLE:��ֹ����
+  11          sbit LED=P4^2;//�ź�ָʾ��
+  12          
+  13          sbit SRD1 = P1^7;
+  14          sbit SRD2 = P1^6;
+  15          sbit SRD3 = P1^5;
+  16          sbit SRD4 = P1^4;
+  17          
+  18          
+  19          
+  20          void  main(void)
+  21          {
+  22   1        uint8 idata nAsrRes;
+  23   1        uint8 i=0;
+  24   1        P1M0 = 0xFF;
+  25   1        P1M1 = 0x00;
+  26   1        SRD1 = SRD2 = SRD3 = SRD4 =0;
+  27   1        Led_test();
+  28   1        MCU_init();
+  29   1        LD_Reset();
+  30   1        UartIni(); /*���ڳ�ʼ��*/
+  31   1        nAsrStatus = LD_ASR_NONE;   //  ��ʼ״̬��û������ASR
+  32   1      
+  33   1        while(1)
+  34   1        {
+  35   2          switch(nAsrStatus)
+  36   2          {
+  37   3          case LD_ASR_RUNING:
+  38   3          case LD_ASR_ERROR:
+  39   3            break;
+  40   3          case LD_ASR_NONE:
+  41   3          {
+  42   4            nAsrStatus=LD_ASR_RUNING;
+  43   4            if (RunASR()==0)  /*  ����һ��ASRʶ�����̣�ASR��ʼ����ASR���
+             -ӹؼ��������ASR����*/
+  44   4            {
+  45   5              nAsrStatus = LD_ASR_ERROR;
+  46   5            }
+  47   4            break;
+  48   4          }
+  49   3          case LD_ASR_FOUNDOK: /* һ��ASRʶ�����̽�����ȥȡASRʶ����*/
+  50   3          {
+  51   4            nAsrRes = LD_GetResult();   /*��ȡ���*/
+  52   4            User_handle(nAsrRes);//�û�ִ�к���
+  53   4            nAsrStatus = LD_ASR_NONE;
+C51 COMPILER V9.60.7.0   MAIN                                                              05/24/2025 15:50:58 PAGE 2   
+
+  54   4            break;
+  55   4          }
+  56   3          case LD_ASR_FOUNDZERO:
+  57   3          default:
+  58   3          {
+  59   4            nAsrStatus = LD_ASR_NONE;
+  60   4            break;
+  61   4          }
+  62   3          }// switch
+  63   2        }// while
+  64   1      
+  65   1      }
+  66          
+  67          void Led_test(void)
+  68          {
+  69   1        LED=~ LED;
+  70   1        Delay200ms();
+  71   1        LED=~ LED;
+  72   1        Delay200ms();
+  73   1        LED=~ LED;
+  74   1        Delay200ms();
+  75   1        LED=~ LED;
+  76   1        Delay200ms();
+  77   1        LED=~ LED;
+  78   1        Delay200ms();
+  79   1        LED=~ LED;
+  80   1      }
+  81          
+  82          void MCU_init()
+  83          {
+  84   1        P0 = 0xff;
+  85   1        P1 = 0x00;
+  86   1        P2 = 0xff;
+  87   1        P3 = 0xff;
+  88   1        P4 = 0xff;
+  89   1      
+  90   1      
+  91   1        LD_MODE = 0;    
+  92   1        IE0=1;
+  93   1        EX0=1;
+  94   1        EA=1;
+  95   1      }
+  96          
+  97          void Delay200us()   //@22.1184MHz
+  98          {
+  99   1        unsigned char i, j;
+ 100   1        _nop_();
+ 101   1        _nop_();
+ 102   1        i = 5;
+ 103   1        j = 73;
+ 104   1        do
+ 105   1        {
+ 106   2          while (--j);
+ 107   2        }
+ 108   1        while (--i);
+ 109   1      }
+ 110          
+ 111          void  delay(unsigned long uldata)
+ 112          {
+ 113   1        unsigned int j  =  0;
+ 114   1        unsigned int g  =  0;
+ 115   1        while(uldata--)
+C51 COMPILER V9.60.7.0   MAIN                                                              05/24/2025 15:50:58 PAGE 3   
+
+ 116   1          Delay200us();
+ 117   1      }
+ 118          
+ 119          void Delay200ms()   //@22.1184MHz
+ 120          {
+ 121   1        unsigned char i, j, k;
+ 122   1      
+ 123   1        i = 17;
+ 124   1        j = 208;
+ 125   1        k = 27;
+ 126   1        do
+ 127   1        {
+ 128   2          do
+ 129   2          {
+ 130   3            while (--k);
+ 131   3          }
+ 132   2          while (--j);
+ 133   2        }
+ 134   1        while (--i);
+ 135   1      }
+ 136          
+ 137          
+ 138          void ExtInt0Handler(void) interrupt 0
+ 139          {
+ 140   1        ProcessInt0();
+ 141   1      }
+ 142          
+ 143          void  User_handle(uint8 dat)
+ 144          {
+ 145   1        if(0==dat)
+ 146   1        {
+ 147   2          G0_flag=ENABLE;
+ 148   2          PrintCom("shou dao");
+ 149   2          LED=0;
+ 150   2        }
+ 151   1        else if(ENABLE==G0_flag)
+ 152   1        {
+ 153   2          G0_flag=ENABLE;
+ 154   2          LED=1;
+ 155   2          switch(dat)
+ 156   2          {
+ 157   3              case CODE_1:   /*加湿*/
+ 158   3                  PrintCom("yi jia shi\r\n");
+ 159   3                  break;
+ 160   3              case CODE_2:   /*关闭加湿*/
+ 161   3                  PrintCom("jia shi yi guan bi\r\n");
+ 162   3                  break;
+ 163   3              case CODE_3:   /*前进*/
+ 164   3                  PrintCom("qian jin\r\n");
+ 165   3                  break;
+ 166   3              case CODE_4:   /*后退*/
+ 167   3                  PrintCom("hou tui\r\n");
+ 168   3                  break;
+ 169   3              default:
+ 170   3                  break;
+ 171   3          }
+ 172   2        }
+ 173   1        else
+ 174   1        {
+ 175   2          PrintCom("请说出一级口令"); 
+ 176   2        }
+ 177   1      }
+C51 COMPILER V9.60.7.0   MAIN                                                              05/24/2025 15:50:58 PAGE 4   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    351    ----
+   CONSTANT SIZE    =     86    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      1      10
+   IDATA SIZE       =      1       1
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
