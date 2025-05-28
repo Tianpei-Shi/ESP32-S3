@@ -1,7 +1,7 @@
 
 #ifndef __CONFIG_H
 #define __CONFIG_H
-/*****Ïà¹Øºê¶¨Òå***/
+/*****ï¿½ï¿½Øºê¶¨ï¿½ï¿½***/
 /* exact-width signed integer types */
 typedef   signed          char int8_t;
 typedef   signed short     int int16_t;
@@ -18,15 +18,15 @@ typedef unsigned       long int uint64_t;
 #define DISABLE  0
 
 
-/****Í·ÎÄ¼þ°üº¬*****/
+/****Í·ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½*****/
 #include <intrins.h>
 #include "STC11XX.H"
 #include "LDChip.h"
 #include "Reg_RW.h"
 #include "usart.h"
 
-/****Ìõ¼þ±àÒë¶¨Òå*******/
-#define TEST		 //²âÊÔÃüÁî
+/****ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¶¨ï¿½ï¿½*******/
+#define TEST		 //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 
 

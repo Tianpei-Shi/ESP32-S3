@@ -47,8 +47,8 @@ uint8 LD_GetResult();
 
 #define CODE_1	0x01
 #define CODE_2	0x02
-#define CODE_3 	0x04
-#define CODE_4 	0x05
+#define CODE_3 	0x03
+#define CODE_4 	0x04
 
 #define CODE_5 	0x16
 #define CODE_6 	0x17

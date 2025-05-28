@@ -1,10 +1,9 @@
 #ifndef __USART_H
 #define __USART_H
 
-
-void UartIni(void);//串口初始化
-void UARTSendByte(uint8_t DAT);	//串口发送一字节数据
-void PrintCom(uint8_t *DAT); //打印串口字符串数据
-
+void delay(unsigned long uldata);  // 娣诲姞delay鍑芥暟澹版槑
+void UartIni(void);
+void PrintCom(uint8_t *str);  // 淇敼涓簎int8_t *绫诲瀷
+void UartSendByte(uint8_t dat);  // 淇敼涓簎int8_t绫诲瀷
 
 #endif

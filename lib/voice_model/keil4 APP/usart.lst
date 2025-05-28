@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   USART                                                             05/24/2025 15:29:37 PAGE 1   
+C51 COMPILER V9.60.7.0   USART                                                             05/28/2025 20:49:02 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE USART
@@ -8,64 +8,67 @@ COMPILER INVOKED BY: D:\C51\BIN\C51.EXE ..\user\usart.c OMF2 OPTIMIZE(8,SPEED) B
 
 line level    source
 
-   1          
-   2          #include "config.h"
-   3          #define FOSC 22118400L      //System frequency
-   4          uint32_t baud=9600;           //UART baudrate
-   5          /************************************************************************
-   6          º¯ Êı Ãû£º ´®¿Ú³õÊ¼»¯
-   7          ¹¦ÄÜÃèÊö£º STC10L08XE µ¥Æ¬»ú´®¿Ú³õÊ¼»¯º¯Êı
-   8          ·µ»Øº¯Êı£º none
-   9          ÆäËûËµÃ÷£º none
-  10          **************************************************************************/
-  11          void UartIni(void)
-  12          {
-  13   1          SCON = 0x50;            //8-bit variable UART
-  14   1          TMOD = 0x20;            //Set Timer1 as 8-bit auto reload mode
-  15   1          TH1 = TL1 = -(FOSC/12/32/baud); //Set auto-reload vaule
-  16   1          TR1 = 1;                //Timer1 start run
-  17   1          ES = 1;                 //Enable UART interrupt
-  18   1          EA = 1;                 //Open master interrupt switch
-  19   1      }
-  20          /************************************************************************
-  21          ¹¦ÄÜÃèÊö£º  ´®¿Ú·¢ËÍÒ»×Ö½ÚÊı¾İ
-  22          Èë¿Ú²ÎÊı£º  DAT:´ø·¢ËÍµÄÊı¾İ
-  23          ·µ »Ø Öµ£º  none
-  24          ÆäËûËµÃ÷£º  none
-  25          **************************************************************************/
-  26          void UARTSendByte(uint8_t DAT)
-  27          {
-  28   1        ES  =  0;
-  29   1        TI=0;
-  30   1        SBUF = DAT;
-  31   1        while(TI==0);
-  32   1        TI=0;
-  33   1        ES = 1;
-  34   1      }
-  35          /************************************************************************
-  36          ¹¦ÄÜÃèÊö£º ´®¿Ú·¢ËÍ×Ö·û´®Êı¾İ
-  37          Èë¿Ú²ÎÊı£º  *DAT£º×Ö·û´®Ö¸Õë
-  38          ·µ »Ø Öµ£º none
-  39          ÆäËûËµÃ÷£º API ¹©Íâ²¿Ê¹ÓÃ£¬Ö±¹Û£¡
-  40          **************************************************************************/
-  41          void PrintCom(uint8_t *DAT)
-  42          {
-  43   1        while(*DAT)
-  44   1        {
-  45   2          UARTSendByte(*DAT++);
-  46   2        } 
-  47   1      }
-  48          
+   1          // #include <reg51.h> // Removed to avoid redefinition errors, STC11XX.H from config.h should suffice
+   2          // #include <stdint.h> // Removed as it's not found and types are in config.h
+   3          #include "../code/config.h" // Corrected path to config.h
+   4          
+   5          
+   6          /************************************************************************
+   7             ä¸²å£åˆå§‹åŒ–
+   8          å‡½æ•°åç§°ï¼š   STC10L08XE å•ç‰‡æœºä¸²å£åˆå§‹åŒ–å‡½æ•°
+   9          è¿”å›å‡½æ•°ï¼š   none
+  10          è¯´æ˜ï¼š       none
+  11          **************************************************************************/
+  12          void UartIni(void)
+  13          {
+  14   1          SCON = 0x50;            //8-bit variable UART
+  15   1          PCON |= 0x80;           //SMOD = 1, æ³¢ç‰¹ç‡å€å¢
+  16   1          TMOD &= 0x0F;           //æ¸…é™¤T1çš„æ¨¡å¼ä½
+  17   1          TMOD |= 0x20;           //Set Timer1 as 8-bit auto reload mode
+  18   1          TH1 = 0xFF;             // æ³¢ç‰¹ç‡ 115200bps @22.1184MHz, SMOD=1
+  19   1          TL1 = 0xFF;             // æ³¢ç‰¹ç‡ 115200bps @22.1184MHz, SMOD=1
+  20   1          TR1 = 1;                //Timer1 start run
+  21   1          ES = 1;                 //Enable UART interrupt
+  22   1          EA = 1;                 //Open master interrupt switch
+  23   1      }
+  24          
+  25          void UARTSendByte(uint8_t DAT)
+  26          {
+  27   1          ES = 0;                 //Disable UART interrupt while sending
+  28   1          TI = 0;                 //Clear transmit flag
+  29   1          SBUF = DAT;            //Load data to send
+  30   1          while(!TI);            //Wait for transmission complete
+  31   1          TI = 0;                //Clear transmit flag again
+  32   1          ES = 1;                //Re-enable UART interrupt
+  33   1      }
+  34          
+  35          void PrintCom(uint8_t *DAT)
+  36          {
+  37   1          while(*DAT)            //Send until end of string
+  38   1          {
+  39   2              if(*DAT == '\n')  // å¦‚æœæ˜¯æ¢è¡Œç¬¦
+  40   2              {
+  41   3                  UARTSendByte('\r');  // å…ˆå‘é€å›è½¦
+  42   3                  UARTSendByte('\n');  // å†å‘é€æ¢è¡Œ
+  43   3              }
+  44   2              else
+  45   2              {
+  46   3                  UARTSendByte(*DAT);  // å‘é€æ™®é€šå­—ç¬¦
+  47   3              }
+  48   2              DAT++;
+  49   2          }
+  50   1      }
+  51          
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =     90    ----
+C51 COMPILER V9.60.7.0   USART                                                             05/28/2025 20:49:02 PAGE 2   
+
+   CODE SIZE        =     73    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
-C51 COMPILER V9.60.7.0   USART                                                             05/24/2025 15:29:37 PAGE 2   
-
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =      2       3
+   DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
    EDATA SIZE       =   ----    ----

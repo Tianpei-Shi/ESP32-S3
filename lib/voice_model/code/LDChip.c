@@ -273,7 +273,7 @@ uint8 LD_AsrAddFixed()
 #define DATE_B 15	/*数组一维数值*/
   uint8 code sRecog[DATE_A][DATE_B] =
   {
-    "xiao jie",\
+    "xiao yi",\
 		"jia shi",\
     "guan bi jia shi",\
     "qian jin",\

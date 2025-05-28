@@ -1,48 +1,51 @@
+// #include <reg51.h> // Removed to avoid redefinition errors, STC11XX.H from config.h should suffice
+// #include <stdint.h> // Removed as it's not found and types are in config.h
+#include "../code/config.h" // Corrected path to config.h
 
-#include "config.h"
-#define FOSC 22118400L      //System frequency
-uint32_t baud=9600;           //UART baudrate
+
 /************************************************************************
-º¯ Êı Ãû£º ´®¿Ú³õÊ¼»¯
-¹¦ÄÜÃèÊö£º STC10L08XE µ¥Æ¬»ú´®¿Ú³õÊ¼»¯º¯Êı
-·µ»Øº¯Êı£º none
-ÆäËûËµÃ÷£º none
+   ä¸²å£åˆå§‹åŒ–
+å‡½æ•°åç§°ï¼š   STC10L08XE å•ç‰‡æœºä¸²å£åˆå§‹åŒ–å‡½æ•°
+è¿”å›å‡½æ•°ï¼š   none
+è¯´æ˜ï¼š       none
 **************************************************************************/
 void UartIni(void)
 {
     SCON = 0x50;            //8-bit variable UART
-    TMOD = 0x20;            //Set Timer1 as 8-bit auto reload mode
-    TH1 = TL1 = -(FOSC/12/32/baud); //Set auto-reload vaule
+    PCON |= 0x80;           //SMOD = 1, æ³¢ç‰¹ç‡å€å¢
+    TMOD &= 0x0F;           //æ¸…é™¤T1çš„æ¨¡å¼ä½
+    TMOD |= 0x20;           //Set Timer1 as 8-bit auto reload mode
+    TH1 = 0xFF;             // æ³¢ç‰¹ç‡ 115200bps @22.1184MHz, SMOD=1
+    TL1 = 0xFF;             // æ³¢ç‰¹ç‡ 115200bps @22.1184MHz, SMOD=1
     TR1 = 1;                //Timer1 start run
     ES = 1;                 //Enable UART interrupt
     EA = 1;                 //Open master interrupt switch
 }
-/************************************************************************
-¹¦ÄÜÃèÊö£º 	´®¿Ú·¢ËÍÒ»×Ö½ÚÊı¾İ
-Èë¿Ú²ÎÊı£º	DAT:´ø·¢ËÍµÄÊı¾İ
-·µ »Ø Öµ£º 	none
-ÆäËûËµÃ÷£º	none
-**************************************************************************/
+
 void UARTSendByte(uint8_t DAT)
 {
-	ES  =  0;
-	TI=0;
-	SBUF = DAT;
-	while(TI==0);
-	TI=0;
-	ES = 1;
+    ES = 0;                 //Disable UART interrupt while sending
+    TI = 0;                 //Clear transmit flag
+    SBUF = DAT;            //Load data to send
+    while(!TI);            //Wait for transmission complete
+    TI = 0;                //Clear transmit flag again
+    ES = 1;                //Re-enable UART interrupt
 }
-/************************************************************************
-¹¦ÄÜÃèÊö£º ´®¿Ú·¢ËÍ×Ö·û´®Êı¾İ
-Èë¿Ú²ÎÊı£º 	*DAT£º×Ö·û´®Ö¸Õë
-·µ »Ø Öµ£º none
-ÆäËûËµÃ÷£º API ¹©Íâ²¿Ê¹ÓÃ£¬Ö±¹Û£¡
-**************************************************************************/
+
 void PrintCom(uint8_t *DAT)
 {
-	while(*DAT)
-	{
-	 	UARTSendByte(*DAT++);
-	}	
+    while(*DAT)            //Send until end of string
+    {
+        if(*DAT == '\n')  // å¦‚æœæ˜¯æ¢è¡Œç¬¦
+        {
+            UARTSendByte('\r');  // å…ˆå‘é€å›è½¦
+            UARTSendByte('\n');  // å†å‘é€æ¢è¡Œ
+        }
+        else
+        {
+            UARTSendByte(*DAT);  // å‘é€æ™®é€šå­—ç¬¦
+        }
+        DAT++;
+    }
 }
 

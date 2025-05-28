@@ -2,20 +2,18 @@
 
 uint8 idata nAsrStatus=0;
 void MCU_init();
-void ProcessInt0(); //ʶ��������
+void ProcessInt0(); //识别处理函数
 void delay(unsigned long uldata);
-void User_handle(uint8 dat);//�û�ִ�в�������
+void User_handle(uint8 dat);//用户执行操作函数
 void Delay200ms();
-void Led_test(void);//��Ƭ������ָʾ
-uint8_t G0_flag=DISABLE;//���б�־��ENABLE:���С�DISABLE:��ֹ����
-sbit LED=P4^2;//�ź�ָʾ��
+void Led_test(void);//单片机工作指示
+uint8_t G0_flag=DISABLE;//命令标志，ENABLE:允许。DISABLE:禁止命令
+sbit LED=P4^2;//信号指示灯
 
 sbit SRD1 = P1^7;
 sbit SRD2 = P1^6;
 sbit SRD3 = P1^5;
 sbit SRD4 = P1^4;
-
-
 
 void  main(void)
 {
@@ -27,8 +25,8 @@ void  main(void)
   Led_test();
   MCU_init();
   LD_Reset();
-  UartIni(); /*���ڳ�ʼ��*/
-  nAsrStatus = LD_ASR_NONE;		//	��ʼ״̬��û������ASR
+  UartIni(); /*初始化串口*/
+  nAsrStatus = LD_ASR_NONE;		//	初始状态，没有检测到ASR
 
   while(1)
   {
@@ -40,16 +38,16 @@ void  main(void)
     case LD_ASR_NONE:
     {
       nAsrStatus=LD_ASR_RUNING;
-      if (RunASR()==0)	/*	����һ��ASRʶ�����̣�ASR��ʼ����ASR���ӹؼ��������ASR����*/
+      if (RunASR()==0)	/*	检测到一个ASR，开始处理ASR，ASR开始处理，ASR处理结束*/
       {
         nAsrStatus = LD_ASR_ERROR;
       }
       break;
     }
-    case LD_ASR_FOUNDOK: /*	һ��ASRʶ�����̽�����ȥȡASRʶ����*/
+    case LD_ASR_FOUNDOK: /*	检测到一个ASR，开始处理，处理结束，取走ASR*/
     {
-      nAsrRes = LD_GetResult();		/*��ȡ���*/
-      User_handle(nAsrRes);//�û�ִ�к���
+      nAsrRes = LD_GetResult();		/*取结果*/
+      User_handle(nAsrRes);//用户执行操作
       nAsrStatus = LD_ASR_NONE;
       break;
     }
@@ -66,8 +64,6 @@ void  main(void)
 
 void Led_test(void)
 {
-  LED=~ LED;
-  Delay200ms();
   LED=~ LED;
   Delay200ms();
   LED=~ LED;
@@ -145,7 +141,7 @@ void 	User_handle(uint8 dat)
   if(0==dat)
   {
     G0_flag=ENABLE;
-		PrintCom("shou dao");
+    PrintCom("shou dao\n");  // 收到
     LED=0;
   }
   else if(ENABLE==G0_flag)
@@ -155,23 +151,32 @@ void 	User_handle(uint8 dat)
     switch(dat)
     {
         case CODE_1:   /*加湿*/
-            PrintCom("yi jia shi\r\n");
+            SRD1 = 1;  // Turn on humidifier relay
+            PrintCom("yi jia shi\n");  // 已加湿
             break;
         case CODE_2:   /*关闭加湿*/
-            PrintCom("jia shi yi guan bi\r\n");
+            SRD1 = 0;  // Turn off humidifier relay
+            PrintCom("guan bi jia shi\n");  // 关闭加湿
             break;
         case CODE_3:   /*前进*/
-            PrintCom("qian jin\r\n");
+            SRD2 = 1;  // Forward motor control
+            SRD3 = 0;
+            PrintCom("qian jin\n");  // 前进
             break;
         case CODE_4:   /*后退*/
-            PrintCom("hou tui\r\n");
+            SRD2 = 0;  // Backward motor control
+            SRD3 = 1;
+            PrintCom("hou tui\n");  // 后退
             break;
         default:
+            // Stop all motors
+            SRD2 = 0;
+            SRD3 = 0;
             break;
     }
   }
   else
   {
-    PrintCom("请说出一级口令"); 
+    PrintCom("Please say command\n"); 
   }
 }
