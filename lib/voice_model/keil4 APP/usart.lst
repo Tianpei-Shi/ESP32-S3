@@ -1,0 +1,81 @@
+C51 COMPILER V9.60.7.0   USART                                                             05/28/2025 20:49:02 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE USART
+OBJECT MODULE PLACED IN ..\obj\usart.obj
+COMPILER INVOKED BY: D:\C51\BIN\C51.EXE ..\user\usart.c OMF2 OPTIMIZE(8,SPEED) BROWSE INCDIR(..\code;..\user) DEBUG PRIN
+                    -T(.\usart.lst) TABS(2) OBJECT(..\obj\usart.obj)
+
+line level    source
+
+   1          // #include <reg51.h> // Removed to avoid redefinition errors, STC11XX.H from config.h should suffice
+   2          // #include <stdint.h> // Removed as it's not found and types are in config.h
+   3          #include "../code/config.h" // Corrected path to config.h
+   4          
+   5          
+   6          /************************************************************************
+   7             串口初始化
+   8          函数名称：   STC10L08XE 单片机串口初始化函数
+   9          返回函数：   none
+  10          说明：       none
+  11          **************************************************************************/
+  12          void UartIni(void)
+  13          {
+  14   1          SCON = 0x50;            //8-bit variable UART
+  15   1          PCON |= 0x80;           //SMOD = 1, 波特率倍增
+  16   1          TMOD &= 0x0F;           //清除T1的模式位
+  17   1          TMOD |= 0x20;           //Set Timer1 as 8-bit auto reload mode
+  18   1          TH1 = 0xFF;             // 波特率 115200bps @22.1184MHz, SMOD=1
+  19   1          TL1 = 0xFF;             // 波特率 115200bps @22.1184MHz, SMOD=1
+  20   1          TR1 = 1;                //Timer1 start run
+  21   1          ES = 1;                 //Enable UART interrupt
+  22   1          EA = 1;                 //Open master interrupt switch
+  23   1      }
+  24          
+  25          void UARTSendByte(uint8_t DAT)
+  26          {
+  27   1          ES = 0;                 //Disable UART interrupt while sending
+  28   1          TI = 0;                 //Clear transmit flag
+  29   1          SBUF = DAT;            //Load data to send
+  30   1          while(!TI);            //Wait for transmission complete
+  31   1          TI = 0;                //Clear transmit flag again
+  32   1          ES = 1;                //Re-enable UART interrupt
+  33   1      }
+  34          
+  35          void PrintCom(uint8_t *DAT)
+  36          {
+  37   1          while(*DAT)            //Send until end of string
+  38   1          {
+  39   2              if(*DAT == '\n')  // 如果是换行符
+  40   2              {
+  41   3                  UARTSendByte('\r');  // 先发送回车
+  42   3                  UARTSendByte('\n');  // 再发送换行
+  43   3              }
+  44   2              else
+  45   2              {
+  46   3                  UARTSendByte(*DAT);  // 发送普通字符
+  47   3              }
+  48   2              DAT++;
+  49   2          }
+  50   1      }
+  51          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+C51 COMPILER V9.60.7.0   USART                                                             05/28/2025 20:49:02 PAGE 2   
+
+   CODE SIZE        =     73    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
