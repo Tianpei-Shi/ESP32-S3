@@ -1,0 +1,24 @@
+{
+  "name": "LD3320_ESP32",
+  "version": "1.0.0",
+  "description": "ESP32 library for LD3320 voice recognition chip",
+  "keywords": "ld3320, voice recognition, speech, esp32, arduino",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "authors": [
+    {
+      "name": "ESP32-S3 Project",
+      "email": "",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "dependencies": {
+    "SPI": "*"
+  },
+  "frameworks": "arduino",
+  "platforms": "espressif32"
+} 
